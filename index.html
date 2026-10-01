@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Keep Clone - Flask</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #202124; color: white; padding: 20px; }
+        .container { max-width: 600px; margin: 0 auto; }
+        h2 { text-align: center; color: #e8eaed; }
+        .note-form { background: #2d2e30; padding: 20px; border-radius: 8px; border: 1px solid #5f6368; margin-bottom: 30px; }
+        input, textarea { width: 100%; margin-bottom: 10px; padding: 12px; background: transparent; border: none; color: white; outline: none; box-sizing: border-box; font-family: inherit; }
+        input { font-size: 1.1em; font-weight: bold; }
+        input::placeholder, textarea::placeholder { color: #9aa0a6; }
+        .actions { display: flex; justify-content: flex-end; }
+        button.save-btn { background: #fbbc04; color: black; border: none; padding: 8px 24px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        .note-card { background: #2d2e30; padding: 15px; border-radius: 8px; border: 1px solid #5f6368; margin-bottom: 15px; position: relative; word-wrap: break-word; }
+        .note-card h3 { margin-top: 0; margin-bottom: 10px; }
+        .note-card p { margin: 0; color: #e8eaed; white-space: pre-wrap; }
+        .delete-btn { position: absolute; top: 15px; right: 15px; background: transparent; border: none; color: #9aa0a6; cursor: pointer; font-size: 16px; }
+        .delete-btn:hover { color: #f28b82; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>📝 CatatanKu</h2>
+        
+        <!-- Form Tambah Catatan -->
+        <div class="note-form">
+            <input type="text" id="title" placeholder="Judul" required>
+            <textarea id="content" placeholder="Buat catatan..." rows="3" required></textarea>
+            <div class="actions">
+                <button class="save-btn" onclick="saveNote()">Tutup & Simpan</button>
+            </div>
+        </div>
+
+        <!-- Daftar Catatan Muncul di Sini -->
+        <div id="notesList"></div>
+    </div>
+
+    <script>
+        // Mengambil data dari backend Flask
+        async function fetchNotes() {
+            const res = await fetch('/api/notes');
+            const data = await res.json();
+            const list = document.getElementById('notesList');
+            list.innerHTML = '';
+            
+            data.forEach(note => {
+                list.innerHTML += `
+                    <div class="note-card">
+                        <h3>${note.title}</h3>
+                        <p>${note.content}</p>
+                        <button class="delete-btn" onclick="deleteNote('${note.id}')">🗑️</button>
+                    </div>`;
+            });
+        }
+
+        // Menyimpan data ke backend Flask
+        async function saveNote() {
+            const title = document.getElementById('title').value;
+            const content = document.getElementById('content').value;
+            if(!title && !content) return; // Jangan simpan jika kosong
+
+            await fetch('/api/notes', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ title, content })
+            });
+
+            // Kosongkan form setelah tersimpan
+            document.getElementById('title').value = '';
+            document.getElementById('content').value = '';
+            fetchNotes(); // Segarkan tampilan
+        }
+
+        // Menghapus data di backend Flask
+        async function deleteNote(id) {
+            await fetch(`/api/notes/${id}`, { method: 'DELETE' });
+            fetchNotes(); // Segarkan tampilan
+        }
+
+        // Jalankan fetchNotes saat web pertama kali dimuat
+        fetchNotes();
+    </script>
+</body>
+</html>
